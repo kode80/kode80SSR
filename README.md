@@ -1,7 +1,7 @@
 # kode80SSR
 An open source (FreeBSD license) screen space reflections implementation for Unity3D 5. Features GPU DDA for screen space ray casting (derived from [Morgan McGuire & Mike Mara's work](http://casual-effects.blogspot.com/2014/08/screen-space-ray-tracing.html)), backface depth buffer for per-pixel geometry thickness, distance attenuated pixel stride, rough/smooth surface reflection blurring, fully customizable for quality/speed and more.  
 
-Blog post to come...
+Read more on implementation: [http://www.kode80.com/blog/2015/03/11/screen-space-reflections-in-unity-5](http://www.kode80.com/blog/2015/03/11/screen-space-reflections-in-unity-5)
 
 # Usage
 Add the SSR component to a Camera, see properties section below for details. Requires deferred rendering path and a scene made up of Standard Shader materials.
