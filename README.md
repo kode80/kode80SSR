@@ -7,7 +7,7 @@ Read more on implementation: [http://www.kode80.com/blog/2015/03/11/screen-space
 Add the SSR component to a Camera, see properties section below for details. Requires deferred rendering path and a scene made up of Standard Shader materials.
 
 # Status
-Currently tested and optimized for OSX. Physically correct handling of specular is faked for now. Direct X port still needed.
+Currently tested and optimized for OSX & Windows. Physically correct handling of specular is faked for now.
 
 # Properties
 ### Downsample:
