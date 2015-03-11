@@ -1,0 +1,234 @@
+﻿using UnityEngine;
+using System.Collections;
+
+[ExecuteInEditMode]
+[RequireComponent(typeof(Camera))]
+
+public class SSR : MonoBehaviour 
+{
+	[Header("Downsample:")]
+	[Range( 0.0f, 8.0f)]
+	public int backfaceDepthDownsample = 0;
+	[Range( 0.0f, 8.0f)]
+	public int ssrDownsample = 0;
+	[Range( 0.0f, 8.0f)]
+	public int blurDownsample = 0;
+	
+	[Header("Raycast:")]
+	[Range( 1.0f, 300.0f)]
+	public int iterations = 20;
+	[Range( 0.0f, 32.0f)]
+	public int binarySearchIterations;
+	[Range( 1.0f, 64.0f)]
+	public int pixelStride = 1;
+	public float pixelStrideZCutoff = 100.0f;
+	public float pixelZSizeOffset = 0.1f;
+	public float maxRayDistance = 10.0f;
+
+	[Header("Reflection Fading:")]
+	[Range( 0.0f, 1.0f)]
+	public float screenEdgeFadeStart = 0.75f;
+	[Range( 0.0f, 1.0f)]
+	public float eyeFadeStart = 0.0f;
+	[Range( 0.0f, 1.0f)]
+	public float eyeFadeEnd = 1.0f;
+
+	[Header("Roughness:")]
+	[Range( 0.0f, 16.0f)]
+	public int maxBlurRadius = 8;
+	
+	private Shader _backfaceDepthShader;
+	private Material _ssrMaterial;
+	private Material _blurMaterial;
+	private Material _combinerMaterial;
+	private RenderTexture _backFaceDepthTexture;
+	private Camera _backFaceCamera;
+
+	void OnEnable()
+	{
+		CreateMaterialsIfNeeded();
+		GetComponent<Camera>().depthTextureMode |= DepthTextureMode.Depth;
+	}
+
+	void OnDisable()
+	{
+		DestroyMaterials();
+
+		if( _backFaceCamera)
+		{
+			DestroyImmediate( _backFaceCamera.gameObject);
+			_backFaceCamera = null;
+		}
+	}
+	
+	void Start () 
+	{
+		CreateMaterialsIfNeeded();
+	}
+
+	void OnPreCull()
+	{
+		Camera camera = GetComponent<Camera>();
+
+		int downsampleBackFaceDepth = backfaceDepthDownsample + 1;
+		int width = camera.pixelWidth / downsampleBackFaceDepth;
+		int height = camera.pixelHeight / downsampleBackFaceDepth;
+		_backFaceDepthTexture = RenderTexture.GetTemporary( width,  
+		                                                    height,   
+		                                                    16, 
+		                                                    RenderTextureFormat.RFloat);
+
+		if( _backFaceCamera == null)
+		{
+			GameObject cameraGameObject = new GameObject( "BackFaceDepthCamera");
+			cameraGameObject.hideFlags = HideFlags.HideAndDontSave;
+			_backFaceCamera = cameraGameObject.AddComponent<Camera>();
+		}
+
+		_backFaceCamera.CopyFrom( camera);
+		_backFaceCamera.renderingPath = RenderingPath.Forward;
+		_backFaceCamera.enabled = false;
+		_backFaceCamera.SetReplacementShader( Shader.Find( "kode80/BackFaceDepth"), null); 
+		_backFaceCamera.backgroundColor = new Color( 1.0f, 1.0f, 1.0f, 1.0f);
+		_backFaceCamera.clearFlags = CameraClearFlags.SolidColor;
+		//_backFaceCamera.cullingMask = LayerMask.GetMask( "Everything");
+
+		_backFaceCamera.targetTexture = _backFaceDepthTexture;
+		_backFaceCamera.Render();
+	}
+
+	[ImageEffectOpaque]
+	void OnRenderImage( RenderTexture source, RenderTexture destination)
+	{
+		CreateMaterialsIfNeeded();
+		UpdateMaterialsPublicProperties();
+		
+		int downsampleSSR = ssrDownsample + 1;
+		int dsSSRWidth = source.width / downsampleSSR;
+		int dsSSRHeight = source.height / downsampleSSR;
+
+		bool debugDepth = false;
+		if( debugDepth)
+		{
+			Graphics.Blit( _backFaceDepthTexture, destination);
+			RenderTexture.ReleaseTemporary( _backFaceDepthTexture);
+
+			return;
+		}
+
+
+
+		FilterMode filterMode = FilterMode.Trilinear;
+
+		RenderTexture rtSSR = RenderTexture.GetTemporary( dsSSRWidth, dsSSRHeight, 0);
+		rtSSR.filterMode = filterMode;
+
+		if( _backFaceDepthTexture)
+		{
+			_ssrMaterial.SetTexture( "_BackFaceDepthTex", _backFaceDepthTexture);
+		}
+		Graphics.Blit( source, rtSSR, _ssrMaterial);
+
+		if( maxBlurRadius > 0)
+		{
+			int downsampleBlur = blurDownsample + 1;
+			int dsBlurWidth = source.width / downsampleBlur;
+			int dsBlurHeight = source.height / downsampleBlur;
+
+			RenderTexture rtBlurX = RenderTexture.GetTemporary( dsBlurWidth, dsBlurHeight, 0);
+			rtBlurX.filterMode = filterMode;
+			_blurMaterial.SetVector( "_TexelOffsetScale",
+			                         new Vector4 ((float)maxBlurRadius / source.width, 0,0,0));
+			Graphics.Blit( rtSSR, rtBlurX, _blurMaterial);
+
+			RenderTexture rtBlurY = RenderTexture.GetTemporary( dsBlurWidth, dsBlurHeight, 0);
+			rtBlurY.filterMode = filterMode;
+			_blurMaterial.SetVector( "_TexelOffsetScale",
+			                         new Vector4( 0, (float)maxBlurRadius/source.height, 0,0));
+			Graphics.Blit( rtBlurX, rtBlurY, _blurMaterial);
+
+			RenderTexture.ReleaseTemporary( rtBlurX);
+			RenderTexture.ReleaseTemporary( rtSSR);
+
+			rtSSR = rtBlurY;
+		}
+
+		_combinerMaterial.SetTexture( "_BlurTex", rtSSR);
+		Graphics.Blit( source, destination, _combinerMaterial);
+
+		RenderTexture.ReleaseTemporary( rtSSR);
+		RenderTexture.ReleaseTemporary( _backFaceDepthTexture);
+	}
+
+	private void CreateMaterialsIfNeeded()
+	{
+		if( _ssrMaterial == null)
+		{
+			_ssrMaterial = new Material( Shader.Find( "kode80/SSR"));
+			_ssrMaterial.hideFlags = HideFlags.HideAndDontSave;
+		}
+
+		if( _blurMaterial == null)
+		{
+			_blurMaterial = new Material( Shader.Find( "kode80/BilaturalBlur"));
+			_blurMaterial.hideFlags = HideFlags.HideAndDontSave;
+		}
+
+		if( _combinerMaterial == null)
+		{
+			_combinerMaterial = new Material( Shader.Find( "kode80/SSRBlurCombiner"));
+			_combinerMaterial.hideFlags = HideFlags.HideAndDontSave;
+		}
+	}
+
+	private void DestroyMaterials()
+	{
+		DestroyImmediate( _ssrMaterial);
+		_ssrMaterial = null;
+		
+		DestroyImmediate( _blurMaterial);
+		_blurMaterial = null;
+
+		DestroyImmediate( _combinerMaterial);
+		_combinerMaterial = null;
+	}
+
+	private void UpdateMaterialsPublicProperties()
+	{
+		if( _ssrMaterial)
+		{
+			Camera camera = GetComponent<Camera>();
+			
+			_ssrMaterial.SetFloat( "_PixelStride", pixelStride);
+			_ssrMaterial.SetFloat( "_PixelStrideZCuttoff", pixelStrideZCutoff);
+			_ssrMaterial.SetFloat( "_PixelZSize", pixelZSizeOffset);
+
+			_ssrMaterial.SetFloat( "_Iterations", iterations);
+			_ssrMaterial.SetFloat( "_BinarySearchIterations", binarySearchIterations);
+			_ssrMaterial.SetFloat( "_MaxRayDistance", maxRayDistance);
+			_ssrMaterial.SetFloat( "_ScreenEdgeFadeStart", screenEdgeFadeStart);
+			_ssrMaterial.SetFloat( "_EyeFadeStart", eyeFadeStart);
+			_ssrMaterial.SetFloat( "_EyeFadeEnd", eyeFadeEnd);
+
+			int downsampleSSR = ssrDownsample + 1;
+			int width = camera.pixelWidth / downsampleSSR;
+			int height = camera.pixelHeight / downsampleSSR;
+			Matrix4x4 trs = Matrix4x4.TRS( new Vector3( 0.5f, 0.5f, 0.0f), Quaternion.identity, new Vector3( 0.5f, 0.5f, 1.0f));
+			Matrix4x4 scrScale = Matrix4x4.Scale( new Vector3( width, height, 1.0f));
+			Matrix4x4 projection = camera.projectionMatrix;
+
+			Matrix4x4 m = scrScale * trs * projection;
+
+			_ssrMaterial.SetVector( "_RenderBufferSize", new Vector4( width, height, 0.0f, 0.0f));
+			_ssrMaterial.SetMatrix( "_CameraProjectionMatrix", m);
+			_ssrMaterial.SetMatrix( "_CameraInverseProjectionMatrix", projection.inverse);
+			_ssrMaterial.SetMatrix( "_NormalMatrix", camera.worldToCameraMatrix);
+		}
+
+		if( _blurMaterial)
+		{
+			_blurMaterial.SetFloat( "_DepthBias", 0.305f);
+			_blurMaterial.SetFloat( "_NormalBias", 0.29f);
+		}
+	}
+}
