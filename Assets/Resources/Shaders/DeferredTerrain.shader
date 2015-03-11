@@ -1,3 +1,10 @@
+//  This is the Unity 5 Standard terrain shader with the exclude_path:deferred #pragma
+//  removed so that it renders into the GBuffer. Unity disabled deferred rendering of
+//  terrain due to normal blending not working when more than 4 textures are used
+//  however if less than 4 textures are used it works just fine. Included here solely
+//  for demo purposes.
+//    - Ben Hopkins (kode80)
+
 Shader "kode80/DeferredTerrain" {
 	Properties {
 		// set by terrain engine
