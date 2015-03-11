@@ -102,8 +102,9 @@ Shader "kode80/SSR"
 			
 			inline bool rayIntersectsDepthBF( float zA, float zB, float2 uv)
 			{
-				float cameraZ = Linear01Depth( tex2D( _CameraDepthTexture, uv).r) * -_ProjectionParams.z;	
-			    float backZ = tex2D( _BackFaceDepthTex, uv).r * -_ProjectionParams.z;
+				float4 uv4 = float4( uv, 0.0, 0.0);
+				float cameraZ = Linear01Depth( tex2Dlod( _CameraDepthTexture, uv4).r) * -_ProjectionParams.z;	
+			    float backZ = tex2Dlod( _BackFaceDepthTex, uv4).r * -_ProjectionParams.z;
 			    
 			    return zB <= cameraZ && zA >= backZ - _PixelZSize;
 			}

@@ -46,13 +46,13 @@ Shader "kode80/BackFaceDepth"
 			{
 			    v2f output;
 			    output.position = mul( UNITY_MATRIX_MVP, v.vertex);
-			    output.linearDepth.z = COMPUTE_DEPTH_01;
+			    output.linearDepth = float4( 0.0, 0.0, COMPUTE_DEPTH_01, 0.0);
 			    return output;
 			}
 			
 			float4 frag( v2f input) : COLOR 
 			{
-				return float4( input.linearDepth.z);
+				return float4( input.linearDepth.z, 0.0, 0.0, 0.0);
 			}
 
             ENDCG
