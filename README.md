@@ -26,7 +26,7 @@ For every pixel in the SSR pass a ray is cast. For every step of a ray the front
 * **Max Ray Distance:** The maximum distance a ray can travel in world space.
 
 ### Reflection Fading:
-Since SSR is a screen space effect, we rely on depth and normal passes for geometry information. This means that any geometry not rendered to the screen can not be reflected. To minimize the obviousness of this deficiancy we can detect and smoothly fade these reflections.
+Since SSR is a screen space effect, we rely on depth and normal passes for geometry information. This means that any geometry not rendered to the screen can not be reflected. To minimize the obviousness of this deficiency we can detect and smoothly fade these reflections.
 * **Screen Edge Fade Start:** A value between 0-1 that controls when reflections who's rays reach the screen edges will start to fade. 0 = center of screen, 1 = edge of screen. Values closer to 1 will result in a more abrupt fade, values closer to 0 will result in smoother fading. Generally 0.75 is a good value.
 * **Eye Fade Start:** The ray direction's Z value where reflections begin to fade. Reflections will be smoothly faded between this and the Z value set for Eye Fade End.
 * **Eye Fade End:** The ray direction's Z value where reflections are completely transparent.
