@@ -287,7 +287,11 @@ Shader "kode80/SSR"
 					// Fade ray hits based on distance from ray origin
 					alpha *= 1.0 - clamp( distance( vsRayOrigin, hitPoint) / _MaxRayDistance, 0.0, 1.0);
 					
-					specRoughPixel = half4( 1.0);
+					// Comment out the line below to get faked specular,
+					// in no way physically correct but will tint based
+					// on spec. Physically correct handling of spec is coming...
+					specRoughPixel = half4( 1.0, 1.0, 1.0, 1.0);
+					
 					return half4( (tex2D( _MainTex, hitPixel)).rgb * specRoughPixel.rgb, alpha);
 				}
 				
