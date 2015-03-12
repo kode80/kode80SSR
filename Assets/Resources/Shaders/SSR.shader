@@ -255,14 +255,10 @@ Shader "kode80/SSR"
 				float3 hitPoint;
 				float iterationCount;
 				
-				float jitter = 0.0;
-				//if( i.uv.x > 0.5)
-				//{
-					float2 uv2 = i.uv * _RenderBufferSize;
-					float c = (uv2.x + uv2.y) * 0.25;
-					jitter = fmod( c, 1.0);
-				//}
-				
+				float2 uv2 = i.uv * _RenderBufferSize;
+				float c = (uv2.x + uv2.y) * 0.25;
+				float jitter = fmod( c, 1.0);
+			
 				if( traceScreenSpaceRay( vsRayOrigin, vsRayDirection, jitter, hitPixel, hitPoint, iterationCount, i.uv.x > 0.5))
 				{
 					float alpha = min( 1.0, specularStrength * 1.0);
