@@ -228,7 +228,7 @@ Shader "kode80/SSR"
 			        	Q0.xy += dQ.xy * i;
 			        	Q0.z = pqk.z;
 			        	hitPoint = Q0 / pqk.w;
-			        	iterationCount = i;// * (1.0 - strideScaler);
+			        	iterationCount = i;
 			        	return true;
 			        }
 			    }
