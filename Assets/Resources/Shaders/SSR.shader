@@ -292,6 +292,7 @@ Shader "kode80/SSR"
 				specRoughPixel = half4( 1.0, 1.0, 1.0, 1.0);
 				
 				alpha *= intersect;
+				hitPixel = lerp( i.uv, hitPixel, intersect);
 				
 				return half4( (tex2D( _MainTex, hitPixel)).rgb * specRoughPixel.rgb, alpha);
 			}
