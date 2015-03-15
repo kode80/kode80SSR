@@ -147,7 +147,6 @@ Shader "kode80/SSR"
 			    
 			    // If the line is degenerate, make it cover at least one pixel
 			    // to avoid handling zero-pixel extent as a special case later
-			    //P1 += float2( (distanceSquared(P0, P1) < 0.0001) ? 0.01 : 0.0);
 			    P1 += (distanceSquared(P0, P1) < 0.0001) ? 0.01 : 0.0;
 			    
 			    float2 delta = P1 - P0;
