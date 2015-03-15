@@ -202,16 +202,15 @@ Shader "kode80/SSR"
 			        intersect = rayIntersectsDepthBF( zA, zB, hitPixel);
 			    }
 			    
+	        	// Binary search refinement
 	    		if( pixelStride > 1.0 && intersect)
 	        	{
-	        		// Binary search refinement
 			    	pqk -= dPQK;
 			    	dPQK /= pixelStride;
 			    	
 			    	float originalStride = pixelStride * 0.5;
 	        		float stride = originalStride;
 	        		
-	        		//zA = (dPQK.z * -0.5 + pqk.z) / (dPQK.w * -0.5 + pqk.w);
 	        		zA = pqk.z / pqk.w;
 	        		zB = zA;
 	        		
@@ -263,40 +262,38 @@ Shader "kode80/SSR"
 				float c = (uv2.x + uv2.y) * 0.25;
 				float jitter = fmod( c, 1.0);
 			
-				if( traceScreenSpaceRay( vsRayOrigin, vsRayDirection, jitter, hitPixel, hitPoint, iterationCount, i.uv.x > 0.5))
-				{
-					float alpha = min( 1.0, specularStrength * 1.0);
-					
-					// Fade ray hits that approach the maximum iterations
-					alpha *= 1.0 - (iterationCount / _Iterations);
-					
-					// Fade ray hits that approach the screen edge
-					float screenFade = _ScreenEdgeFadeStart;
-					float2 hitPixelNDC = (hitPixel * 2.0 - 1.0);
-					float maxDimension = min( 1.0, max( abs( hitPixelNDC.x), abs( hitPixelNDC.y)));
-					alpha *= 1.0 - (max( 0.0, maxDimension - screenFade) / (1.0 - screenFade));
-					
-					// Fade ray hits base on how much they face the camera
-					float eyeFadeStart = _EyeFadeStart;
-					float eyeFadeEnd = _EyeFadeEnd;
-					swapIfBigger( eyeFadeStart, eyeFadeEnd);
-					
-					float eyeDirection = clamp( vsRayDirection.z, eyeFadeStart, eyeFadeEnd);
-					alpha *= 1.0 - ((eyeDirection - eyeFadeStart) / (eyeFadeEnd - eyeFadeStart));
-					
-					// Fade ray hits based on distance from ray origin
-					alpha *= 1.0 - clamp( distance( vsRayOrigin, hitPoint) / _MaxRayDistance, 0.0, 1.0);
-					
-					// Comment out the line below to get faked specular,
-					// in no way physically correct but will tint based
-					// on spec. Physically correct handling of spec is coming...
-					specRoughPixel = half4( 1.0, 1.0, 1.0, 1.0);
-					
-					return half4( (tex2D( _MainTex, hitPixel)).rgb * specRoughPixel.rgb, alpha);
-				}
+				bool intersect = traceScreenSpaceRay( vsRayOrigin, vsRayDirection, jitter, hitPixel, hitPoint, iterationCount, i.uv.x > 0.5);
+			
+				float alpha = min( 1.0, specularStrength * 1.0);
 				
-				return half4( 0.0, 0.0, 0.0, 0.0);
-				//return half4( (tex2D( _MainTex, i.uv)).rgb, 0.0);
+				// Fade ray hits that approach the maximum iterations
+				alpha *= 1.0 - (iterationCount / _Iterations);
+				
+				// Fade ray hits that approach the screen edge
+				float screenFade = _ScreenEdgeFadeStart;
+				float2 hitPixelNDC = (hitPixel * 2.0 - 1.0);
+				float maxDimension = min( 1.0, max( abs( hitPixelNDC.x), abs( hitPixelNDC.y)));
+				alpha *= 1.0 - (max( 0.0, maxDimension - screenFade) / (1.0 - screenFade));
+				
+				// Fade ray hits base on how much they face the camera
+				float eyeFadeStart = _EyeFadeStart;
+				float eyeFadeEnd = _EyeFadeEnd;
+				swapIfBigger( eyeFadeStart, eyeFadeEnd);
+				
+				float eyeDirection = clamp( vsRayDirection.z, eyeFadeStart, eyeFadeEnd);
+				alpha *= 1.0 - ((eyeDirection - eyeFadeStart) / (eyeFadeEnd - eyeFadeStart));
+				
+				// Fade ray hits based on distance from ray origin
+				alpha *= 1.0 - clamp( distance( vsRayOrigin, hitPoint) / _MaxRayDistance, 0.0, 1.0);
+				
+				// Comment out the line below to get faked specular,
+				// in no way physically correct but will tint based
+				// on spec. Physically correct handling of spec is coming...
+				specRoughPixel = half4( 1.0, 1.0, 1.0, 1.0);
+				
+				alpha *= intersect;
+				
+				return half4( (tex2D( _MainTex, hitPixel)).rgb * specRoughPixel.rgb, alpha);
 			}
 			
 			ENDCG
