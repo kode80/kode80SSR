@@ -244,6 +244,7 @@ public class SSR : MonoBehaviour
 			Matrix4x4 m = scrScale * trs * projection;
 
 			_ssrMaterial.SetVector( "_RenderBufferSize", new Vector4( width, height, 0.0f, 0.0f));
+			_ssrMaterial.SetVector( "_OneDividedByRenderBufferSize", new Vector4( 1.0f / width, 1.0f / height, 0.0f, 0.0f));
 			_ssrMaterial.SetMatrix( "_CameraProjectionMatrix", m);
 			_ssrMaterial.SetMatrix( "_CameraInverseProjectionMatrix", projection.inverse);
 			_ssrMaterial.SetMatrix( "_NormalMatrix", camera.worldToCameraMatrix);

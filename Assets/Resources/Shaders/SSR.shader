@@ -65,6 +65,7 @@ Shader "kode80/SSR"
 		 	
 		 	float4x4 _NormalMatrix;
 		 	float2 _RenderBufferSize;
+		 	float2 _OneDividedByRenderBufferSize;		// Optimization: removes 2 divisions every itteration
 
 			struct v2f {
 			   float4 position : SV_POSITION;
@@ -197,7 +198,7 @@ Shader "kode80/SSR"
 			    	swapIfBigger( zB, zA);
 			    	
 			    	hitPixel = permute ? pqk.yx : pqk.xy;
-			    	hitPixel /= _RenderBufferSize;
+			    	hitPixel *= _OneDividedByRenderBufferSize;
 			        
 			        intersect = rayIntersectsDepthBF( zA, zB, hitPixel);
 			    }
@@ -223,7 +224,7 @@ Shader "kode80/SSR"
 	    				swapIfBigger( zB, zA);
 				    	
 				    	hitPixel = permute ? pqk.yx : pqk.xy;
-				    	hitPixel /= _RenderBufferSize;
+				    	hitPixel *= _OneDividedByRenderBufferSize;
 				        
 				        originalStride *= 0.5;
 				        stride = rayIntersectsDepthBF( zA, zB, hitPixel) ? -originalStride : originalStride;
