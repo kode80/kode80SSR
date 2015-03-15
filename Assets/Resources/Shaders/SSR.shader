@@ -181,59 +181,63 @@ Shader "kode80/SSR"
 			    dP *= pixelStride; dQ *= pixelStride; dk *= pixelStride;
 			    P0 += dP * jitter; Q0 += dQ * jitter; k0 += dk * jitter;
 			 
-			    float i, zA, zB;
+			    float i, zA = 0.0, zB = 0.0;
 			    
 			    // Track ray step and derivatives in a float4 to parallelize
 			    float4 pqk = float4( P0, Q0.z, k0);
 			    float4 dPQK = float4( dP, dQ.z, dk);
+			    bool intersect = false;
 			    
-			    for( i=0; i<_Iterations; i++)
+			    for( i=0; i<_Iterations && intersect == false; i++)
 			    {
 			    	pqk += dPQK;
 			    	
-			    	zA = (dPQK.z * -0.5 + pqk.z) / (dPQK.w * -0.5 + pqk.w);
+			    	zA = zB;
 			    	zB = (dPQK.z * 0.5 + pqk.z) / (dPQK.w * 0.5 + pqk.w);
 			    	swapIfBigger( zB, zA);
 			    	
 			    	hitPixel = permute ? pqk.yx : pqk.xy;
 			    	hitPixel /= _RenderBufferSize;
 			        
-			        if( rayIntersectsDepthBF( zA, zB, hitPixel))
-			        {
-			        	if( pixelStride > 1.0)
-			        	{
-			        		// Binary search refinement
-					    	pqk -= dPQK;
-					    	dPQK /= pixelStride;
-					    	
-					    	float originalStride = pixelStride * 0.5;
-			        		float stride = originalStride;
-			        		
-			        		for( float j=0; j<_BinarySearchIterations; j++)
-						    {
-						    	pqk += dPQK * stride;
-						    	
-						    	zA = (dPQK.z * 0.5 + pqk.z) / (dPQK.w * 0.5 + pqk.w);
-			    				zB = (dPQK.z * -0.5 + pqk.z) / (dPQK.w * -0.5 + pqk.w);
-			    				swapIfBigger( zB, zA);
-						    	
-						    	hitPixel = permute ? pqk.yx : pqk.xy;
-						    	hitPixel /= _RenderBufferSize;
-						        
-						        originalStride *= 0.5;
-						        stride = rayIntersectsDepthBF( zA, zB, hitPixel) ? -originalStride : originalStride;
-						    }
-			        	}
-			        	
-			        	Q0.xy += dQ.xy * i;
-			        	Q0.z = pqk.z;
-			        	hitPoint = Q0 / pqk.w;
-			        	iterationCount = i;
-			        	return true;
-			        }
+			        intersect = rayIntersectsDepthBF( zA, zB, hitPixel);
 			    }
 			    
-			    return false;
+	    		if( pixelStride > 1.0 && intersect)
+	        	{
+	        		// Binary search refinement
+			    	pqk -= dPQK;
+			    	dPQK /= pixelStride;
+			    	
+			    	float originalStride = pixelStride * 0.5;
+	        		float stride = originalStride;
+	        		
+	        		//zA = (dPQK.z * -0.5 + pqk.z) / (dPQK.w * -0.5 + pqk.w);
+	        		zA = pqk.z / pqk.w;
+	        		zB = zA;
+	        		
+	        		for( float j=0; j<_BinarySearchIterations; j++)
+				    {
+				    	pqk += dPQK * stride;
+				    	
+				    	zA = zB;
+	    				zB = (dPQK.z * -0.5 + pqk.z) / (dPQK.w * -0.5 + pqk.w);
+	    				swapIfBigger( zB, zA);
+				    	
+				    	hitPixel = permute ? pqk.yx : pqk.xy;
+				    	hitPixel /= _RenderBufferSize;
+				        
+				        originalStride *= 0.5;
+				        stride = rayIntersectsDepthBF( zA, zB, hitPixel) ? -originalStride : originalStride;
+				    }
+	        	}
+
+			    
+	        	Q0.xy += dQ.xy * i;
+	        	Q0.z = pqk.z;
+	        	hitPoint = Q0 / pqk.w;
+	        	iterationCount = i;
+			        	
+			    return intersect;
 			}
 			
 			
@@ -291,7 +295,8 @@ Shader "kode80/SSR"
 					return half4( (tex2D( _MainTex, hitPixel)).rgb * specRoughPixel.rgb, alpha);
 				}
 				
-				return half4( (tex2D( _MainTex, i.uv)).rgb, 0.0);
+				return half4( 0.0, 0.0, 0.0, 0.0);
+				//return half4( (tex2D( _MainTex, i.uv)).rgb, 0.0);
 			}
 			
 			ENDCG
