@@ -239,6 +239,40 @@ Shader "kode80/SSR"
 			    return intersect;
 			}
 			
+			inline float calculateAlphaForIntersection( bool intersect, 
+					  								   float iterationCount, 
+					  								   float specularStrength,
+					  								   float2 hitPixel,
+					  								   float3 hitPoint,
+					  								   float3 vsRayOrigin,
+					  								   float3 vsRayDirection)
+			{
+				float alpha = min( 1.0, specularStrength * 1.0);
+				
+				// Fade ray hits that approach the maximum iterations
+				alpha *= 1.0 - (iterationCount / _Iterations);
+				
+				// Fade ray hits that approach the screen edge
+				float screenFade = _ScreenEdgeFadeStart;
+				float2 hitPixelNDC = (hitPixel * 2.0 - 1.0);
+				float maxDimension = min( 1.0, max( abs( hitPixelNDC.x), abs( hitPixelNDC.y)));
+				alpha *= 1.0 - (max( 0.0, maxDimension - screenFade) / (1.0 - screenFade));
+				
+				// Fade ray hits base on how much they face the camera
+				float eyeFadeStart = _EyeFadeStart;
+				float eyeFadeEnd = _EyeFadeEnd;
+				swapIfBigger( eyeFadeStart, eyeFadeEnd);
+				
+				float eyeDirection = clamp( vsRayDirection.z, eyeFadeStart, eyeFadeEnd);
+				alpha *= 1.0 - ((eyeDirection - eyeFadeStart) / (eyeFadeEnd - eyeFadeStart));
+				
+				// Fade ray hits based on distance from ray origin
+				alpha *= 1.0 - clamp( distance( vsRayOrigin, hitPoint) / _MaxRayDistance, 0.0, 1.0);
+				
+				alpha *= intersect;
+				
+				return alpha;
+			}
 			
 			half4 frag (v2f i) : COLOR
 			{
@@ -263,36 +297,13 @@ Shader "kode80/SSR"
 				float jitter = fmod( c, 1.0);
 			
 				bool intersect = traceScreenSpaceRay( vsRayOrigin, vsRayDirection, jitter, hitPixel, hitPoint, iterationCount, i.uv.x > 0.5);
-			
-				float alpha = min( 1.0, specularStrength * 1.0);
-				
-				// Fade ray hits that approach the maximum iterations
-				alpha *= 1.0 - (iterationCount / _Iterations);
-				
-				// Fade ray hits that approach the screen edge
-				float screenFade = _ScreenEdgeFadeStart;
-				float2 hitPixelNDC = (hitPixel * 2.0 - 1.0);
-				float maxDimension = min( 1.0, max( abs( hitPixelNDC.x), abs( hitPixelNDC.y)));
-				alpha *= 1.0 - (max( 0.0, maxDimension - screenFade) / (1.0 - screenFade));
-				
-				// Fade ray hits base on how much they face the camera
-				float eyeFadeStart = _EyeFadeStart;
-				float eyeFadeEnd = _EyeFadeEnd;
-				swapIfBigger( eyeFadeStart, eyeFadeEnd);
-				
-				float eyeDirection = clamp( vsRayDirection.z, eyeFadeStart, eyeFadeEnd);
-				alpha *= 1.0 - ((eyeDirection - eyeFadeStart) / (eyeFadeEnd - eyeFadeStart));
-				
-				// Fade ray hits based on distance from ray origin
-				alpha *= 1.0 - clamp( distance( vsRayOrigin, hitPoint) / _MaxRayDistance, 0.0, 1.0);
+				float alpha = calculateAlphaForIntersection( intersect, iterationCount, specularStrength, hitPixel, hitPoint, vsRayOrigin, vsRayDirection);
+				hitPixel = lerp( i.uv, hitPixel, intersect);
 				
 				// Comment out the line below to get faked specular,
 				// in no way physically correct but will tint based
 				// on spec. Physically correct handling of spec is coming...
 				specRoughPixel = half4( 1.0, 1.0, 1.0, 1.0);
-				
-				alpha *= intersect;
-				hitPixel = lerp( i.uv, hitPixel, intersect);
 				
 				return half4( (tex2D( _MainTex, hitPixel)).rgb * specRoughPixel.rgb, alpha);
 			}
