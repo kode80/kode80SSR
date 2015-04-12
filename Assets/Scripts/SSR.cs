@@ -144,8 +144,6 @@ public class SSR : MonoBehaviour
 			return;
 		}
 		
-		
-		
 		FilterMode filterMode = FilterMode.Trilinear;
 		
 		RenderTexture rtSSR = RenderTexture.GetTemporary( dsSSRWidth, dsSSRHeight, 0);
@@ -262,4 +260,3 @@ public class SSR : MonoBehaviour
 		}
 	}
 }
-
