@@ -62,7 +62,7 @@ public class SSR : MonoBehaviour
 	public int maxBlurRadius = 8;
 
 	[Header("Blur Quality:")]
-	[Range( 2.0f, 8.0f)]
+	[Range( 2.0f, 4.0f)]
 	public int BlurQuality = 2;
 	
 	private Shader _backfaceDepthShader;
