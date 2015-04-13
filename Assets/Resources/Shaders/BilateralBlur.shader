@@ -80,7 +80,7 @@ Shader "kode80/BilateralBlur"
 						 			   float3 sourceNormal,
 						 			   float sourceDepth,
 									   float i,
-									   float _BlurQuality, //old sampleCount
+									   float _BlurQuality, //sampleCount
 									   float2 stepSize, 
 								  	   inout half4 accumulator, 
 								  	   inout half denominator)
@@ -104,18 +104,26 @@ Shader "kode80/BilateralBlur"
 			    half denominator = 0.214607;
 			    
 			    processSample( i.uv, sourceNormal, sourceDepth, 1, _BlurQuality, stepSize, accumulator, denominator);
-			    processSample( i.uv, sourceNormal, sourceDepth, 2, _BlurQuality, stepSize, accumulator, denominator);
-			    processSample( i.uv, sourceNormal, sourceDepth, 3, _BlurQuality, stepSize, accumulator, denominator);
-			    processSample( i.uv, sourceNormal, sourceDepth, 4, _BlurQuality, stepSize, accumulator, denominator);
-			    processSample( i.uv, sourceNormal, sourceDepth, 5, _BlurQuality, stepSize, accumulator, denominator);
-			    processSample( i.uv, sourceNormal, sourceDepth, 6, _BlurQuality, stepSize, accumulator, denominator);
+			    processSample( i.uv, sourceNormal, sourceDepth, 1 * 0.2, _BlurQuality, stepSize, accumulator, denominator);
+			    processSample( i.uv, sourceNormal, sourceDepth, 1 * 0.4, _BlurQuality, stepSize, accumulator, denominator);
+			    processSample( i.uv, sourceNormal, sourceDepth, 1 * 0.6, _BlurQuality, stepSize, accumulator, denominator);
+			    processSample( i.uv, sourceNormal, sourceDepth, 1 * 0.8, _BlurQuality, stepSize, accumulator, denominator);
+			    processSample( i.uv, sourceNormal, sourceDepth, 1 * 1.2, _BlurQuality, stepSize, accumulator, denominator);
+			    processSample( i.uv, sourceNormal, sourceDepth, 1 * 1.4, _BlurQuality, stepSize, accumulator, denominator);
+			    processSample( i.uv, sourceNormal, sourceDepth, 1 * 1.6, _BlurQuality, stepSize, accumulator, denominator);
+			    processSample( i.uv, sourceNormal, sourceDepth, 1 * 1.8, _BlurQuality, stepSize, accumulator, denominator);
+			    processSample( i.uv, sourceNormal, sourceDepth, 1 * 2.0, _BlurQuality, stepSize, accumulator, denominator);
 			    
 			    processSample( i.uv, sourceNormal, sourceDepth, -1, _BlurQuality, stepSize, accumulator, denominator);
-			    processSample( i.uv, sourceNormal, sourceDepth, -2, _BlurQuality, stepSize, accumulator, denominator);
-			    processSample( i.uv, sourceNormal, sourceDepth, -3, _BlurQuality, stepSize, accumulator, denominator);
-			    processSample( i.uv, sourceNormal, sourceDepth, -4, _BlurQuality, stepSize, accumulator, denominator);
-			    processSample( i.uv, sourceNormal, sourceDepth, -5, _BlurQuality, stepSize, accumulator, denominator);
-			    processSample( i.uv, sourceNormal, sourceDepth, -6, _BlurQuality, stepSize, accumulator, denominator);
+			    processSample( i.uv, sourceNormal, sourceDepth, -1 * 0.2, _BlurQuality, stepSize, accumulator, denominator);
+			    processSample( i.uv, sourceNormal, sourceDepth, -1 * 0.4, _BlurQuality, stepSize, accumulator, denominator);
+			    processSample( i.uv, sourceNormal, sourceDepth, -1 * 0.6, _BlurQuality, stepSize, accumulator, denominator);
+			    processSample( i.uv, sourceNormal, sourceDepth, -1 * 0.8, _BlurQuality, stepSize, accumulator, denominator);
+			    processSample( i.uv, sourceNormal, sourceDepth, -1 * 1.2, _BlurQuality, stepSize, accumulator, denominator);
+			    processSample( i.uv, sourceNormal, sourceDepth, -1 * 1.4, _BlurQuality, stepSize, accumulator, denominator);
+			    processSample( i.uv, sourceNormal, sourceDepth, -1 * 1.6, _BlurQuality, stepSize, accumulator, denominator);
+			    processSample( i.uv, sourceNormal, sourceDepth, -1 * 1.8, _BlurQuality, stepSize, accumulator, denominator);
+			    processSample( i.uv, sourceNormal, sourceDepth, -1 * 2.0, _BlurQuality, stepSize, accumulator, denominator);
 			    
 			    return accumulator / denominator;
 			}
