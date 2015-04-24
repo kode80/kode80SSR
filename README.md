@@ -34,3 +34,4 @@ Since SSR is a screen space effect, we rely on depth and normal passes for geome
 ### Roughness:
 Generally speaking, in PBR roughness/smoothness controls how sharp reflections appear. This is faked in the kode80SSR shader by using the roughness channel of the GBuffer to control the per-pixel radius of a bilateral blur pass.
 * **Max Blur Radius:** This value is the maximum radius allowed by the blur pass and is multiplied by the per-pixel roughness value from the Unity GBuffer. Setting this to 0 means reflection blurring is disabled regardless of roughness values.
+* **Blur Quality:** This value define the quality of the reflection blur. It depend from Max Blur Radius value.
