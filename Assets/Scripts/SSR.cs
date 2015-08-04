@@ -65,7 +65,7 @@ public class SSR : MonoBehaviour
 	[Range( 2.0f, 4.0f)]
 	public int BlurQuality = 2;
 	
-	[Header("HDR")]
+	[Header("HDR:")]
 	public bool useHDR = true;
 	
 	private Shader _backfaceDepthShader;
