@@ -146,7 +146,7 @@ public class SSR : MonoBehaviour
 		
 		FilterMode filterMode = FilterMode.Trilinear;
 		
-		RenderTexture rtSSR = RenderTexture.GetTemporary( dsSSRWidth, dsSSRHeight, 0);
+		RenderTexture rtSSR = RenderTexture.GetTemporary( dsSSRWidth, dsSSRHeight, 0, RenderTextureFormat.DefaultHDR);
 		rtSSR.filterMode = filterMode;
 		
 		if( _backFaceDepthTexture)
@@ -161,13 +161,13 @@ public class SSR : MonoBehaviour
 			int dsBlurWidth = source.width / downsampleBlur;
 			int dsBlurHeight = source.height / downsampleBlur;
 			
-			RenderTexture rtBlurX = RenderTexture.GetTemporary( dsBlurWidth, dsBlurHeight, 0);
+			RenderTexture rtBlurX = RenderTexture.GetTemporary( dsBlurWidth, dsBlurHeight, 0, RenderTextureFormat.DefaultHDR);
 			rtBlurX.filterMode = filterMode;
 			_blurMaterial.SetVector( "_TexelOffsetScale",
 			                        new Vector4 ((float)maxBlurRadius / source.width, 0,0,0));
 			Graphics.Blit( rtSSR, rtBlurX, _blurMaterial);
 			
-			RenderTexture rtBlurY = RenderTexture.GetTemporary( dsBlurWidth, dsBlurHeight, 0);
+			RenderTexture rtBlurY = RenderTexture.GetTemporary( dsBlurWidth, dsBlurHeight, 0, RenderTextureFormat.DefaultHDR);
 			rtBlurY.filterMode = filterMode;
 			_blurMaterial.SetVector( "_TexelOffsetScale",
 			                        new Vector4( 0, (float)maxBlurRadius/source.height, 0,0));
