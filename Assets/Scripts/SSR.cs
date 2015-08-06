@@ -65,20 +65,18 @@ public class SSR : MonoBehaviour
 	[Range( 2.0f, 4.0f)]
 	public int BlurQuality = 2;
 	
-	[Header("HDR:")]
-	public bool useHDR = true;
-	
 	private Shader _backfaceDepthShader;
 	private Material _ssrMaterial;
 	private Material _blurMaterial;
 	private Material _combinerMaterial;
 	private RenderTexture _backFaceDepthTexture;
+	private Camera _camera;
 	private Camera _backFaceCamera;
 	
 	void OnEnable()
 	{
 		CreateMaterialsIfNeeded();
-		GetComponent<Camera>().depthTextureMode |= DepthTextureMode.Depth;
+		_camera.depthTextureMode |= DepthTextureMode.Depth;
 	}
 	
 	void OnDisable()
@@ -91,19 +89,27 @@ public class SSR : MonoBehaviour
 			_backFaceCamera = null;
 		}
 	}
+
+	void Reset()
+	{
+		_camera = GetComponent<Camera>();
+	}
 	
 	void Start () 
 	{
 		CreateMaterialsIfNeeded();
 	}
+
+	void Awake()
+	{
+		_camera = GetComponent<Camera>();
+	}
 	
 	void OnPreCull()
 	{
-		Camera camera = GetComponent<Camera>();
-		
 		int downsampleBackFaceDepth = backfaceDepthDownsample + 1;
-		int width = camera.pixelWidth / downsampleBackFaceDepth;
-		int height = camera.pixelHeight / downsampleBackFaceDepth;
+		int width = _camera.pixelWidth / downsampleBackFaceDepth;
+		int height = _camera.pixelHeight / downsampleBackFaceDepth;
 		_backFaceDepthTexture = RenderTexture.GetTemporary( width,  
 		                                                   height,   
 		                                                   16, 
@@ -116,7 +122,7 @@ public class SSR : MonoBehaviour
 			_backFaceCamera = cameraGameObject.AddComponent<Camera>();
 		}
 		
-		_backFaceCamera.CopyFrom( camera);
+		_backFaceCamera.CopyFrom( _camera);
 		_backFaceCamera.renderingPath = RenderingPath.Forward;
 		_backFaceCamera.enabled = false;
 		_backFaceCamera.SetReplacementShader( Shader.Find( "kode80/BackFaceDepth"), null); 
@@ -150,7 +156,7 @@ public class SSR : MonoBehaviour
 		FilterMode filterMode = FilterMode.Trilinear;
 		
 		RenderTexture rtSSR;
-		if(useHDR == true)
+		if( _camera.hdr)
 		{
 			rtSSR = RenderTexture.GetTemporary( dsSSRWidth, dsSSRHeight, 0, RenderTextureFormat.DefaultHDR);
 		}
@@ -174,7 +180,7 @@ public class SSR : MonoBehaviour
 			int dsBlurHeight = source.height / downsampleBlur;
 			
 			RenderTexture rtBlurX = null;
-			if(useHDR == true)
+			if( _camera.hdr)
 			{
 				rtBlurX = RenderTexture.GetTemporary( dsBlurWidth, dsBlurHeight, 0, RenderTextureFormat.DefaultHDR);
 			}
@@ -189,7 +195,7 @@ public class SSR : MonoBehaviour
 			Graphics.Blit( rtSSR, rtBlurX, _blurMaterial);
 			
 			RenderTexture rtBlurY;
-			if(useHDR == true)
+			if( _camera.hdr)
 			{
 				rtBlurY = RenderTexture.GetTemporary( dsBlurWidth, dsBlurHeight, 0, RenderTextureFormat.DefaultHDR);
 			}
@@ -253,8 +259,6 @@ public class SSR : MonoBehaviour
 	{
 		if( _ssrMaterial)
 		{
-			Camera camera = GetComponent<Camera>();
-			
 			_ssrMaterial.SetFloat( "_PixelStride", pixelStride);
 			_ssrMaterial.SetFloat( "_PixelStrideZCuttoff", pixelStrideZCutoff);
 			_ssrMaterial.SetFloat( "_PixelZSize", pixelZSizeOffset);
@@ -268,11 +272,11 @@ public class SSR : MonoBehaviour
 			_ssrMaterial.SetFloat( "_EyeFadeEnd", eyeFadeEnd);
 			
 			int downsampleSSR = ssrDownsample + 1;
-			int width = camera.pixelWidth / downsampleSSR;
-			int height = camera.pixelHeight / downsampleSSR;
+			int width = _camera.pixelWidth / downsampleSSR;
+			int height = _camera.pixelHeight / downsampleSSR;
 			Matrix4x4 trs = Matrix4x4.TRS( new Vector3( 0.5f, 0.5f, 0.0f), Quaternion.identity, new Vector3( 0.5f, 0.5f, 1.0f));
 			Matrix4x4 scrScale = Matrix4x4.Scale( new Vector3( width, height, 1.0f));
-			Matrix4x4 projection = camera.projectionMatrix;
+			Matrix4x4 projection = _camera.projectionMatrix;
 			
 			Matrix4x4 m = scrScale * trs * projection;
 			
@@ -280,7 +284,7 @@ public class SSR : MonoBehaviour
 			_ssrMaterial.SetVector( "_OneDividedByRenderBufferSize", new Vector4( 1.0f / width, 1.0f / height, 0.0f, 0.0f));
 			_ssrMaterial.SetMatrix( "_CameraProjectionMatrix", m);
 			_ssrMaterial.SetMatrix( "_CameraInverseProjectionMatrix", projection.inverse);
-			_ssrMaterial.SetMatrix( "_NormalMatrix", camera.worldToCameraMatrix);
+			_ssrMaterial.SetMatrix( "_NormalMatrix", _camera.worldToCameraMatrix);
 		}
 		
 		if( _blurMaterial)
