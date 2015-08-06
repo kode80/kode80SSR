@@ -65,6 +65,9 @@ public class SSR : MonoBehaviour
 	[Range( 2.0f, 4.0f)]
 	public int BlurQuality = 2;
 	
+	[Header("HDR:")]
+	public bool useHDR = true;
+	
 	private Shader _backfaceDepthShader;
 	private Material _ssrMaterial;
 	private Material _blurMaterial;
@@ -146,7 +149,16 @@ public class SSR : MonoBehaviour
 		
 		FilterMode filterMode = FilterMode.Trilinear;
 		
-		RenderTexture rtSSR = RenderTexture.GetTemporary( dsSSRWidth, dsSSRHeight, 0);
+		RenderTexture rtSSR;
+		if(useHDR == true)
+		{
+			rtSSR = RenderTexture.GetTemporary( dsSSRWidth, dsSSRHeight, 0, RenderTextureFormat.DefaultHDR);
+		}
+		else
+		{
+			rtSSR = RenderTexture.GetTemporary( dsSSRWidth, dsSSRHeight, 0, RenderTextureFormat.Default);
+		}
+		
 		rtSSR.filterMode = filterMode;
 		
 		if( _backFaceDepthTexture)
@@ -161,13 +173,31 @@ public class SSR : MonoBehaviour
 			int dsBlurWidth = source.width / downsampleBlur;
 			int dsBlurHeight = source.height / downsampleBlur;
 			
-			RenderTexture rtBlurX = RenderTexture.GetTemporary( dsBlurWidth, dsBlurHeight, 0);
+			RenderTexture rtBlurX = null;
+			if(useHDR == true)
+			{
+				rtBlurX = RenderTexture.GetTemporary( dsBlurWidth, dsBlurHeight, 0, RenderTextureFormat.DefaultHDR);
+			}
+			else
+			{
+				rtBlurX = RenderTexture.GetTemporary( dsBlurWidth, dsBlurHeight, 0, RenderTextureFormat.Default);
+			}
+			
 			rtBlurX.filterMode = filterMode;
 			_blurMaterial.SetVector( "_TexelOffsetScale",
 			                        new Vector4 ((float)maxBlurRadius / source.width, 0,0,0));
 			Graphics.Blit( rtSSR, rtBlurX, _blurMaterial);
 			
-			RenderTexture rtBlurY = RenderTexture.GetTemporary( dsBlurWidth, dsBlurHeight, 0);
+			RenderTexture rtBlurY;
+			if(useHDR == true)
+			{
+				rtBlurY = RenderTexture.GetTemporary( dsBlurWidth, dsBlurHeight, 0, RenderTextureFormat.DefaultHDR);
+			}
+			else
+			{
+				rtBlurY = RenderTexture.GetTemporary( dsBlurWidth, dsBlurHeight, 0, RenderTextureFormat.Default);
+			}
+			
 			rtBlurY.filterMode = filterMode;
 			_blurMaterial.SetVector( "_TexelOffsetScale",
 			                        new Vector4( 0, (float)maxBlurRadius/source.height, 0,0));
