@@ -277,7 +277,7 @@ Shader "kode80/SSR"
 			half4 frag (v2f i) : COLOR
 			{
 			    half4 specRoughPixel = tex2D( _CameraGBufferTexture1, i.uv);
-				float3 specularStrength = specRoughPixel.a;
+				float specularStrength = specRoughPixel.a;
 				
 				float decodedDepth = Linear01Depth( tex2D( _CameraDepthTexture, i.uv).r);
 				
